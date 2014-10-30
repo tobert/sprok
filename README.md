@@ -16,10 +16,11 @@ This feels a lot more precise and removes a bunch of complexity, so let's see wh
 sprok
 =====
 
-Simple Proc - start complex processes using a config file
+Simple Proc - start complex processes using a simple config file
 
 This is a package for launching processes using simple structured documents rather than string concatenation.
 Sprok strives to provide a bare minimum number of features. There are plenty of other tools to choose from.
+Sprok will call syscall.Exec(). Your process is expected to run in the foreground.
 
 ```
 sprok_json CassandraDaemon.json
