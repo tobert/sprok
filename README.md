@@ -22,11 +22,15 @@ This is a package for launching processes using simple structured documents rath
 Sprok strives to provide a bare minimum number of features. There are plenty of other tools to choose from.
 Sprok will call syscall.Exec(). Your process is expected to run in the foreground.
 
-```
+```sh
 sprok_json CassandraDaemon.json
 sprok_toml CassandraDaemon.toml
 sprok_yaml CassandraDaemon.yaml
 ```
+
+Why support 3 file formats? Because it makes sense to use whatever config format you
+already use in your project. For Apache Cassandra, that's yaml. Some other projects
+use JSON and they should use JSON.
 
 ```json
 { "env": { "FOO": "BAR" }, "argv": [ "/usr/bin/java", "-Xmx8G" ], "stdout": "/dev/null", "stderr": "/dev/null", "stdin": "/dev/null" }
@@ -41,30 +45,3 @@ argv:
 stdout: /run/{{ .Process.User }}/cassandra-stdout.log
 stderr: /run/{{ .Process.User }}/cassandra-stderr.log
 stdin: /dev/null
-```
-
-```go
-package sprok
-
-type Process struct {
-    Env  map[string]string
-    Argv []string
-    // The file descriptors should be directly wired to these destinations. No attempt
-    // should be made to verify permissions or whatever. Fail fast.
-    Stdin  string
-    Stdout string
-    Stderr string
-}
-
-// Exec executes Argv with environment Env and file descriptors 1, 2, and 3 open on the
-// files specified in Stdin, Stdout, and Stderr. They all default to /dev/null if left unspecified
-// in the config or for empty string "".
-func (p *Process) Exec() error {
-    return os.Exec( ... )
-}
-
-// String returns a stringified copy of the command in `ENV=VAL exe -args` form.
-// No quote modification is made; it is a simple concatenation of whatever is in Env and Argv.
-func (p *Process) String() string {
-}
-```
