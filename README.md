@@ -33,7 +33,18 @@ already use in your project. For Apache Cassandra, that's yaml. Some other proje
 use JSON and they should use JSON.
 
 ```json
-{ "env": { "FOO": "BAR" }, "argv": [ "/usr/bin/java", "-Xmx8G" ], "stdout": "/dev/null", "stderr": "/dev/null", "stdin": "/dev/null" }
+{ 
+  "env": {
+    "FOO": "BAR"
+  },
+  "argv": [
+    "/usr/bin/java",
+    "-Xmx8G"
+  ],
+  "stdout": "/dev/null",
+  "stderr": "/dev/null",
+  "stdin": "/dev/null"
+}
 ```
 
 ```yaml
