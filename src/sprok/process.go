@@ -2,7 +2,6 @@ package sprok
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"syscall"
 )
@@ -40,7 +39,7 @@ func (p *Process) String() string {
 	env := strings.Join(p.envPairs(), " ")
 	cmd := strings.Join(p.Argv, " ")
 	// FOO=BAR cmd -arg1 -arg2 foo < /dev/null 1>/dev/null 2>/dev/null
-	return fmt.Sprintf("%s %s < %s 1>%s 2>%s", env, cmd.p.Stdin, p.Stdout, ps.Stderr)
+	return fmt.Sprintf("%s %s <%s 1>%s 2>%s", env, cmd, p.Stdin, p.Stdout, p.Stderr)
 }
 
 func (p *Process) envPairs() []string {
