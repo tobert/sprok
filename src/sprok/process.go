@@ -1,8 +1,10 @@
 package sprok
 
 import (
+	"fmt"
 	"log"
-	"os"
+	"strings"
+	"syscall"
 )
 
 type Process struct {
@@ -15,16 +17,38 @@ type Process struct {
 	Stderr string
 }
 
+// NewProcess returns a Process struct with the env map and argv allocated
+// and all stdio pointed at /dev/null.
+func NewProcess() Process {
+	return Process{
+		Env:    make(map[string]string),
+		Argv:   make([]string, 1),
+		Stdin:  "/dev/null",
+		Stdout: "/dev/null",
+		Stderr: "/dev/null",
+	}
+}
+
 // Exec executes Argv with environment Env and file descriptors 1, 2, and 3 open on the
 // files specified in Stdin, Stdout, and Stderr. They all default to /dev/null if left unspecified
 // in the config or for empty string "".
 func (p *Process) Exec() error {
-	//return os.Exec( ... )
-	return nil
+	return syscall.Exec(p.Argv[0], p.Argv[1:], p.envPairs())
 }
 
-// String returns a stringified copy of the command in `ENV=VAL exe -args` form.
-// No quote modification is made; it is a simple concatenation of whatever is in Env and Argv.
 func (p *Process) String() string {
-	return ""
+	env := strings.Join(p.envPairs(), " ")
+	cmd := strings.Join(p.Argv, " ")
+	// FOO=BAR cmd -arg1 -arg2 foo < /dev/null 1>/dev/null 2>/dev/null
+	return fmt.Sprintf("%s %s < %s 1>%s 2>%s", env, cmd.p.Stdin, p.Stdout, ps.Stderr)
+}
+
+func (p *Process) envPairs() []string {
+	env := make([]string, len(p.Env))
+	i := 0
+	for key, value := range p.Env {
+		env[i] = fmt.Sprintf("%s=%s", key, value)
+		i++
+	}
+	return env
 }
