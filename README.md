@@ -15,9 +15,10 @@ one feature: defining a process using a simple config file that maps
 directly onto how the OS launches a process rather than relying on
 string parsing (e.g. sh -c).
 
-Why support 3 file formats? Because it makes sense to use whatever config format you
-already use in your project. For example, when I'm working with Apache Cassandra,
-it uses YAML so I want to specify the process in YAML as well.
+Why support 3 file formats? Because it makes sense to use whatever
+config format you already use in your project. For example, when I'm
+working with Apache Cassandra, it uses YAML so I want to specify the
+process in YAML as well.
 
 Usage
 =====
@@ -35,6 +36,8 @@ $GOPATH/bin/sprok-yaml process.yaml
 
 Examples
 ========
+
+If stdout/stderr/stdin are not set, they are not modified.
 
 ```json
 {
@@ -57,9 +60,9 @@ env:
 argv:
   - /usr/bin/java
   - -Xmx8G
-stdin: /dev/stdin
-stdout: /dev/stdout
-stderr: /dev/stderr
+stdin: /dev/null
+stdout: /var/log/mything/stdout
+stderr: /var/log/mything/stderr
 ```
 
 TODO
