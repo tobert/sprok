@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+sprok-json/sprok-json
+sprok-toml/sprok-toml
+sprok-yaml/sprok-yaml
+
