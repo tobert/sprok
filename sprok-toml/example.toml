@@ -1,0 +1,13 @@
+argv = [
+  "dd",
+  "if=/dev/urandom",
+  "bs=512",
+  "count=10"
+]
+
+stdout = "/dev/null"
+stderr = "/dev/null"
+stdin = "/dev/null"
+
+[env]
+  FOO = "BAR"
