@@ -18,6 +18,8 @@ package sprok
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strings"
 	"syscall"
 )
@@ -46,6 +48,25 @@ func NewProcess() Process {
 // files specified in Stdin, Stdout, and Stderr. They all default to /dev/null if left unspecified
 // in the config or for empty string "".
 func (p *Process) Exec() error {
+	stdin := openFile(p.Stdin, os.O_RDONLY)
+	stdout := openFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+	stderr := openFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+
+	err := syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
+	if err != nil {
+		log.Fatalf("Failed to redirect stdin: %s\n", err)
+	}
+
+	err = syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd()))
+	if err != nil {
+		log.Fatalf("Failed to redirect stdout: %s\n", err)
+	}
+
+	err = syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
+	if err != nil {
+		log.Fatalf("Failed to redirect stderr: %s\n", err)
+	}
+
 	return syscall.Exec(p.Argv[0], p.Argv[1:], p.envPairs())
 }
 
@@ -64,4 +85,17 @@ func (p *Process) envPairs() []string {
 		i++
 	}
 	return env
+}
+
+func openFile(name string, flags int) *os.File {
+	if name == "/dev/null" {
+		name = os.DevNull
+	}
+
+	f, err := os.OpenFile(name, flags, 0644)
+	if err != nil {
+		log.Fatalf("Could not open file '%s': %s\n", name, err)
+	}
+
+	return f
 }
