@@ -50,7 +50,13 @@ func NewProcess() Process {
 func (p *Process) Exec() error {
 	stdin := openFile(p.Stdin, os.O_RDONLY)
 	stdout := openFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
-	stderr := openFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+
+	var stderr *os.File
+	if p.Stdout == p.Stderr {
+		stderr = stdout
+	} else {
+		stderr = openFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+	}
 
 	err := syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
 	if err != nil {
