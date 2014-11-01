@@ -15,18 +15,26 @@ one feature: defining a process using a simple config file that maps
 directly onto how the OS launches a process rather than relying on
 string parsing (e.g. sh -c).
 
-examples
-========
+Why support 3 file formats? Because it makes sense to use whatever config format you
+already use in your project. For example, when I'm working with Apache Cassandra,
+it uses YAML so I want to specify the process in YAML as well.
+
+Usage
+=====
 
 ```sh
-sprok_json CassandraDaemon.json
-sprok_toml CassandraDaemon.toml
-sprok_yaml CassandraDaemon.yaml
+go get github.com/tobert/sprok/sprok-json
+go get github.com/tobert/sprok/sprok-toml
+go get github.com/tobert/sprok/sprok-yaml
+
+
+$GOPATH/bin/sprok-json process.json
+$GOPATH/bin/sprok-toml process.toml
+$GOPATH/bin/sprok-yaml process.yaml
 ```
 
-Why support 3 file formats? Because it makes sense to use whatever config format you
-already use in your project. For Apache Cassandra, that's yaml. Some other projects
-use JSON and they should use JSON.
+Examples
+========
 
 ```json
 {
