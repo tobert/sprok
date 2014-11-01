@@ -27,6 +27,7 @@ import (
 type Process struct {
 	Env    map[string]string `"env"`
 	Argv   []string          `"argv"`
+	Chdir  string            `"chdir"`
 	Stdin  string            `"stdin"`
 	Stdout string            `"stdout"`
 	Stderr string            `"stderr"`
@@ -38,6 +39,7 @@ func NewProcess() Process {
 	return Process{
 		Env:    map[string]string{},
 		Argv:   make([]string, 1),
+		Chdir:  "/",
 		Stdin:  "/dev/null",
 		Stdout: "/dev/null",
 		Stderr: "/dev/null",
@@ -50,36 +52,49 @@ func NewProcess() Process {
 // string, the file descriptors are left unmodified.
 func (p *Process) Exec() error {
 	var stdin, stdout, stderr *os.File
+	var err error
+
+	err = os.Chdir(p.Chdir)
+	if err != nil {
+		log.Fatalf("Could not chdir to '%s': %s\n", p.Chdir, err)
+	}
 
 	if p.Stdin != "" {
-		stdin = openFile(p.Stdin, os.O_RDONLY)
+		stdin, err = os.OpenFile(p.Stdin, os.O_RDONLY, 0644)
+		if err != nil {
+			log.Fatalf("Could not open stdin target '%s': %s\n", p.Stdin, err)
+		}
 
-		err := syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
+		err = syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
 		if err != nil {
 			log.Fatalf("Failed to redirect stdin: %s\n", err)
 		}
 	}
 
 	if p.Stdout != "" {
-		stdout = openFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+		stdout, err = os.OpenFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			log.Fatalf("Could not open stdout target '%s': %s\n", p.Stdout, err)
+		}
 
-		err := syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd()))
+		err = syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd()))
 		if err != nil {
 			log.Fatalf("Failed to redirect stdout: %s\n", err)
 		}
 	}
 
-	dupStderr := false
-	if p.Stderr != "" && p.Stderr == p.Stdout {
-		stderr = stdout
-		dupStderr = true
-	} else if p.Stderr != "" {
-		stderr = openFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
-		dupStderr = true
-	}
+	if p.Stderr != "" {
+		// there is no reason to open the file twice if they're the same file
+		if p.Stderr == p.Stdout {
+			stderr = stdout
+		} else {
+			stderr, err = os.OpenFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+			if err != nil {
+				log.Fatalf("Could not open stderr target '%s': %s\n", p.Stderr, err)
+			}
+		}
 
-	if dupStderr {
-		err := syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
+		err = syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
 		if err != nil {
 			log.Fatalf("Failed to redirect stderr: %s\n", err)
 		}
@@ -103,17 +118,4 @@ func (p *Process) envPairs() []string {
 		i++
 	}
 	return env
-}
-
-func openFile(name string, flags int) *os.File {
-	if name == "/dev/null" {
-		name = os.DevNull
-	}
-
-	f, err := os.OpenFile(name, flags, 0644)
-	if err != nil {
-		log.Fatalf("Could not open file '%s': %s\n", name, err)
-	}
-
-	return f
 }

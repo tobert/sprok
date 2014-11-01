@@ -1,27 +1,15 @@
 sprok
 =====
 
-Simple Proc - start processes with complex command-lines using a simple config file
+Simple Proc - start processes with complex command-lines using a trivial config file
 
 This is a package for launching processes using simple config files
 rather than string concatenation and/or shell scripts.
 
-why?
-====
-
-There are lots of great process supervisors available. This is not
-a process manager and never will be.  Sprok exists to provide exactly
-one feature: defining a process using a simple config file that maps
-directly onto how the OS launches a process rather than relying on
-string parsing (e.g. sh -c).
-
-Why support 3 file formats? Because it makes sense to use whatever
-config format you already use in your project. For example, when I'm
-working with Apache Cassandra, it uses YAML so I want to specify the
-process in YAML as well.
-
 Usage
 =====
+
+Each config format is built into a separate binary.
 
 ```sh
 go get github.com/tobert/sprok/sprok-json
@@ -41,6 +29,7 @@ If stdout/stderr/stdin are not set, they are not modified.
 
 ```json
 {
+  "chdir": "/opt/cassandra",
   "env": {
     "FOO": "BAR"
   },
@@ -55,6 +44,7 @@ If stdout/stderr/stdin are not set, they are not modified.
 ```
 
 ```yaml
+chdir: /opt/cassandra
 env:
   FOO: BAR
 argv:
@@ -65,7 +55,18 @@ stdout: /var/log/mything/stdout
 stderr: /var/log/mything/stderr
 ```
 
+Rationale
+=========
+
+There are many great process supervisors out there that do a nice job of forking
+a process and watching it. If that's what you need, you should use one.
+
+What sprok provides is a way to launch a process with a single command and no
+shell scripts. The process is defined in a configuration file and no shell-style
+string concatenation or parsing is used. The config structures map directly onto
+the operating system's exec() functionality.
+
 TODO
 ====
 
-* implement stdio fd changes
+* figure out why sprok-toml crashes
