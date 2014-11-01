@@ -44,33 +44,45 @@ func NewProcess() Process {
 	}
 }
 
-// Exec executes Argv with environment Env and file descriptors 1, 2, and 3 open on the
-// files specified in Stdin, Stdout, and Stderr. They all default to /dev/null if left unspecified
-// in the config or for empty string "".
+// Exec executes Argv with environment Env and file descriptors
+// 1, 2, and 3 open on the files specified in Stdin, Stdout,
+// and Stderr. When output files are unspecified or an empty
+// string, the file descriptors are left unmodified.
 func (p *Process) Exec() error {
-	stdin := openFile(p.Stdin, os.O_RDONLY)
-	stdout := openFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+	var stdin, stdout, stderr *os.File
 
-	var stderr *os.File
-	if p.Stdout == p.Stderr {
+	if p.Stdin != "" {
+		stdin = openFile(p.Stdin, os.O_RDONLY)
+
+		err := syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
+		if err != nil {
+			log.Fatalf("Failed to redirect stdin: %s\n", err)
+		}
+	}
+
+	if p.Stdout != "" {
+		stdout = openFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+
+		err := syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd()))
+		if err != nil {
+			log.Fatalf("Failed to redirect stdout: %s\n", err)
+		}
+	}
+
+	dupStderr := false
+	if p.Stderr != "" && p.Stderr == p.Stdout {
 		stderr = stdout
-	} else {
+		dupStderr = true
+	} else if p.Stderr != "" {
 		stderr = openFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND)
+		dupStderr = true
 	}
 
-	err := syscall.Dup2(int(stdin.Fd()), int(os.Stdin.Fd()))
-	if err != nil {
-		log.Fatalf("Failed to redirect stdin: %s\n", err)
-	}
-
-	err = syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd()))
-	if err != nil {
-		log.Fatalf("Failed to redirect stdout: %s\n", err)
-	}
-
-	err = syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
-	if err != nil {
-		log.Fatalf("Failed to redirect stderr: %s\n", err)
+	if dupStderr {
+		err := syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
+		if err != nil {
+			log.Fatalf("Failed to redirect stderr: %s\n", err)
+		}
 	}
 
 	return syscall.Exec(p.Argv[0], p.Argv[1:], p.envPairs())
