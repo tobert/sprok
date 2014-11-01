@@ -61,10 +61,10 @@ Rationale
 There are many great process supervisors out there that do a nice job of forking
 a process and watching it. If that's what you need, you should use one.
 
-What sprok provides is a way to launch a process with a single command and no
-shell scripts. The process is defined in a configuration file and no shell-style
-string concatenation or parsing is used. The config structures map directly onto
-the operating system's exec() functionality.
+What sprok provides is a way to launch a process with a single command with no
+shell scripts and no extra process. The process is defined in a configuration
+file and no shell-style string concatenation or parsing is used. The config
+data structures map directly onto the operating system's execve(3p) functionality.
 
 TODO
 ====
