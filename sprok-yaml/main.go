@@ -32,14 +32,14 @@ func main() {
 		log.Fatal("this program requires exactly one argument")
 	}
 
-	js, err := ioutil.ReadFile(args[0])
+	data, err := ioutil.ReadFile(args[0])
 	if err != nil {
 		log.Fatalf("Error opening '%s' for read: %s\n", args[0], err)
 	}
 
 	proc := sprok.NewProcess()
 
-	err = yaml.Unmarshal(js, &proc)
+	err = yaml.Unmarshal(data, &proc)
 	if err != nil {
 		log.Fatalf("Could not parse YAML data in file '%s': %s\n", args[0], err)
 	}
