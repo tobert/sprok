@@ -34,7 +34,7 @@ type Process struct {
 // and all stdio pointed at /dev/null.
 func NewProcess() Process {
 	return Process{
-		Env:    make(map[string]string),
+		Env:    map[string]string{},
 		Argv:   make([]string, 1),
 		Stdin:  "/dev/null",
 		Stdout: "/dev/null",
