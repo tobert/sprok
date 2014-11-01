@@ -1,26 +1,22 @@
-NOTHING TO SEE HERE MOVE ALONG
-==============================
-
-Just an idea. It's pretty trivial so maybe pointless. Stream of consciousness-ish notes follow:
-
-I plan to use this in my Docker containers to start Cassandra with a precise command line instead of
-with the shell scripts. It's not a huge difference but it removes some complexity in providing a
-consistent way for users to make changes to how Cassandra starts in a container. Because I recommend
-always using a volume for Cassandra, I create a new state directory on that volume and store all of
-Cassandra's startup configuration there, including cassandra.yaml and a couple env scripts. The way
-users set heap memory is by editing a procedural shell script, which usually works out OK but it
-does get fouled up from time to time.
-
-This feels a lot more precise and removes a bunch of complexity, so let's see what happens.
-
 sprok
 =====
 
-Simple Proc - start complex processes using a simple config file
+Simple Proc - start processes with complex command-lines using a simple config file
 
-This is a package for launching processes using simple structured documents rather than string concatenation.
-Sprok strives to provide a bare minimum number of features. There are plenty of other tools to choose from.
-Sprok will call syscall.Exec(). Your process is expected to run in the foreground.
+This is a package for launching processes using simple config files
+rather than string concatenation and/or shell scripts.
+
+why?
+====
+
+There are lots of great process supervisors available. This is not
+a process manager and never will be.  Sprok exists to provide exactly
+one feature: defining a process using a simple config file that maps
+directly onto how the OS launches a process rather than relying on
+string parsing (e.g. sh -c).
+
+examples
+========
 
 ```sh
 sprok_json CassandraDaemon.json
@@ -33,7 +29,7 @@ already use in your project. For Apache Cassandra, that's yaml. Some other proje
 use JSON and they should use JSON.
 
 ```json
-{ 
+{
   "env": {
     "FOO": "BAR"
   },
@@ -49,10 +45,11 @@ use JSON and they should use JSON.
 
 ```yaml
 env:
-  FOO=BAR
+  FOO: BAR
 argv:
   - /usr/bin/java
   - -Xmx8G
-stdout: /run/{{ .Process.User }}/cassandra-stdout.log
-stderr: /run/{{ .Process.User }}/cassandra-stderr.log
-stdin: /dev/null
+stdin: /dev/stdin
+stdout: /dev/stdout
+stderr: /dev/stderr
+```
