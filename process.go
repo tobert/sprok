@@ -20,21 +20,25 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 )
 
+// Process is the configuration for running a process
 type Process struct {
-	Env    map[string]string `"env"`
-	Argv   []string          `"argv"`
-	Chdir  string            `"chdir"`
-	Stdin  string            `"stdin"`
-	Stdout string            `"stdout"`
-	Stderr string            `"stderr"`
+	Chdir  string            `"chdir"`  // cd /tmp
+	Env    map[string]string `"env"`    // env FOO=BAR
+	Argv   []string          `"argv"`   // "/bin/dd" "if=/dev/zero" "count=10"
+	Stdin  string            `"stdin"`  // <"/dev/null"
+	Stdout string            `"stdout"` // >"zero.bin"
+	Stderr string            `"stderr"` // 2>"errors.log"
 }
 
 // NewProcess returns a Process struct with the env map and argv allocated
 // and all stdio pointed at /dev/null.
+// argv is allocated with a length of 1 to hold the command.
+// Use append to add arguments.
 func NewProcess() Process {
 	return Process{
 		Env:    map[string]string{},
@@ -50,15 +54,41 @@ func NewProcess() Process {
 // 1, 2, and 3 open on the files specified in Stdin, Stdout,
 // and Stderr. When output files are unspecified or an empty
 // string, the file descriptors are left unmodified.
+// If argv[0] is stat-able (absolute or relative path), it is used as-is.
+// When that fails the PATH searched using exec.LookPath().
 func (p *Process) Exec() error {
 	var stdin, stdout, stderr *os.File
 	var err error
 
+	// Always chdir before doing anything else, making relative paths
+	// relative to the provided directory.
 	err = os.Chdir(p.Chdir)
 	if err != nil {
 		log.Fatalf("Could not chdir to '%s': %s\n", p.Chdir, err)
 	}
 
+	// Check if it's relative to Chdir or an absolute path, either
+	// way it will stat and return not-nil.
+	fi, err := os.Stat(p.Argv[0])
+	if err != nil {
+		fpath, err := exec.LookPath(p.Argv[0])
+		if err != nil {
+			log.Fatalf("'%s' could not be found in PATH: %s\n", p.Argv[0], err)
+		}
+		p.Argv[0] = fpath
+	}
+
+	// Make sure argv[0] is an actual file before proceeding.
+	fi, err = os.Stat(p.Argv[0])
+	if err != nil {
+		log.Fatalf("BUG: '%s' is not a valid path to a file: %s\n", p.Argv[0], err)
+	}
+	m := fi.Mode()
+	if !m.IsRegular() {
+		log.Fatalf("'%s' is not a file!\n", p.Argv[0])
+	}
+
+	// If stdin is set, remap it to the file specified on an fd opened read-only.
 	if p.Stdin != "" {
 		stdin, err = os.OpenFile(p.Stdin, os.O_RDONLY, 0644)
 		if err != nil {
@@ -71,6 +101,8 @@ func (p *Process) Exec() error {
 		}
 	}
 
+	// If stdout is set, remap it to the file specified on an fd opened
+	// for append and write-only, it will be created if it does not exist.
 	if p.Stdout != "" {
 		stdout, err = os.OpenFile(p.Stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 		if err != nil {
@@ -83,10 +115,12 @@ func (p *Process) Exec() error {
 		}
 	}
 
+	// Same deal as stdout except if stdin and stdout have the same target, in
+	// which case they will share the fd like 2>&1 does.
 	if p.Stderr != "" {
 		// there is no reason to open the file twice if they're the same file
 		if p.Stderr == p.Stdout {
-			stderr = stdout
+			stderr = stdout // will get dup2'd to the same fd
 		} else {
 			stderr, err = os.OpenFile(p.Stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 			if err != nil {
@@ -103,13 +137,17 @@ func (p *Process) Exec() error {
 	return syscall.Exec(p.Argv[0], p.Argv[1:], p.envPairs())
 }
 
+// String returns the process settings as a Bourne shell command.
 func (p *Process) String() string {
 	env := strings.Join(p.envPairs(), " ")
 	cmd := strings.Join(p.Argv, " ")
-	// FOO=BAR cmd -arg1 -arg2 foo < /dev/null 1>/dev/null 2>/dev/null
-	return fmt.Sprintf("%s %s <%s 1>%s 2>%s", env, cmd, p.Stdin, p.Stdout, p.Stderr)
+	// cd / && env FOO=BAR cmd -arg1 -arg2 foo < /dev/null 1>/dev/null 2>/dev/null
+	return fmt.Sprintf("cd %s && env %s %s <%s 1>%s 2>%s",
+		p.Chdir, env, cmd, p.Stdin, p.Stdout, p.Stderr)
 }
 
+// envPairs converts the key:value map into an array of key=val which
+// is what execve(3P) uses.
 func (p *Process) envPairs() []string {
 	env := make([]string, len(p.Env))
 	i := 0
