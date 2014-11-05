@@ -26,13 +26,17 @@ func TestNewProcess(t *testing.T) {
 	}
 }
 
+// This needs to be kept in sync with the format in
+// process.go, which shouldn't change much ...
 func TestProcessString(t *testing.T) {
-	want := "TESTING=true /bin/cat process.go <a 1>b 2>c"
+	want := "cd /tmp && env TESTING=true ANOTHER=yesplease /bin/cat process.go <a 1>b 2>c"
 
 	p := NewProcess()
+	p.Chdir = "/tmp"
 	p.Argv[0] = "/bin/cat"
 	p.Argv = append(p.Argv, "process.go")
 	p.Env["TESTING"] = "true"
+	p.Env["ANOTHER"] = "yesplease"
 	p.Stdin = "a"
 	p.Stdout = "b"
 	p.Stderr = "c"
