@@ -42,7 +42,7 @@ type Process struct {
 func NewProcess() Process {
 	return Process{
 		Env:    map[string]string{},
-		Argv:   make([]string, 1),
+		Argv:   []string{},
 		Chdir:  "/",
 		Stdin:  "/dev/null",
 		Stdout: "/dev/null",
@@ -134,7 +134,7 @@ func (p *Process) Exec() error {
 		}
 	}
 
-	return syscall.Exec(p.Argv[0], p.Argv[1:], p.envPairs())
+	return syscall.Exec(p.Argv[0], p.Argv, p.envPairs())
 }
 
 // String returns the process settings as a Bourne shell command.

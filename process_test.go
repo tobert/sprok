@@ -33,8 +33,7 @@ func TestProcessString(t *testing.T) {
 
 	p := NewProcess()
 	p.Chdir = "/tmp"
-	p.Argv[0] = "/bin/cat"
-	p.Argv = append(p.Argv, "process.go")
+	p.Argv = []string{"/bin/cat", "process.go"}
 	p.Env["TESTING"] = "true"
 	p.Env["ANOTHER"] = "yesplease"
 	p.Stdin = "a"
