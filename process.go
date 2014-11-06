@@ -27,12 +27,12 @@ import (
 
 // Process is the configuration for running a process
 type Process struct {
-	Chdir  string            `"chdir"`  // cd /tmp
-	Env    map[string]string `"env"`    // env FOO=BAR
-	Argv   []string          `"argv"`   // "/bin/dd" "if=/dev/zero" "count=10"
-	Stdin  string            `"stdin"`  // <"/dev/null"
-	Stdout string            `"stdout"` // >"zero.bin"
-	Stderr string            `"stderr"` // 2>"errors.log"
+	Chdir  string            `json:"chdir"  yaml:"chdir"`  // cd /tmp
+	Env    map[string]string `json:"env"    yaml:"env"`    // env FOO=BAR
+	Argv   []string          `json:"argv"   yaml:"argv"`   // "/bin/dd" "if=/dev/zero" "count=10"
+	Stdin  string            `json:"stdin"  yaml:"stdin"`  // <"/dev/null"
+	Stdout string            `json:"stdout" yaml:"stdout"` // >"zero.bin"
+	Stderr string            `json:"stderr" yaml:"stderr"` // 2>"errors.log"
 }
 
 // NewProcess returns a Process struct with the env map and argv allocated
