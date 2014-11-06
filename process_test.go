@@ -21,7 +21,7 @@ import "testing"
 func TestNewProcess(t *testing.T) {
 	p := NewProcess()
 
-	if p.Stdin != "/dev/null" {
+	if p.Stdin != "" {
 		t.Error("stdin initialization failed")
 	}
 }

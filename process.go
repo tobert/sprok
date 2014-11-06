@@ -33,6 +33,8 @@ type Process struct {
 	Stdin  string            `json:"stdin"  yaml:"stdin"`  // <"/dev/null"
 	Stdout string            `json:"stdout" yaml:"stdout"` // >"zero.bin"
 	Stderr string            `json:"stderr" yaml:"stderr"` // 2>"errors.log"
+	Uid    int               `json:"uid"    yaml:"uid"`    // 1337
+	Gid    int               `json:"gid"    yaml:"gid"`    // 1337
 }
 
 // NewProcess returns a Process struct with the env map and argv allocated
@@ -47,6 +49,8 @@ func NewProcess() Process {
 		Stdin:  "",
 		Stdout: "",
 		Stderr: "",
+		Uid:    -1,
+		Gid:    -1,
 	}
 }
 
@@ -131,6 +135,20 @@ func (p *Process) Exec() error {
 		err = syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd()))
 		if err != nil {
 			log.Fatalf("Failed to redirect stderr: %s\n", err)
+		}
+	}
+
+	if p.Uid >= 0 {
+		err = syscall.Setresuid(p.Uid, p.Uid, p.Uid)
+		if err != nil {
+			log.Fatalf("setresuid(%d...) failed: %s\n", p.Uid, err)
+		}
+	}
+
+	if p.Gid >= 0 {
+		err = syscall.Setresgid(p.Gid, p.Gid, p.Gid)
+		if err != nil {
+			log.Fatalf("setresgid(%d...) failed: %s\n", p.Gid, err)
 		}
 	}
 
