@@ -44,9 +44,9 @@ func NewProcess() Process {
 		Env:    map[string]string{},
 		Argv:   []string{},
 		Chdir:  "/",
-		Stdin:  "/dev/null",
-		Stdout: "/dev/null",
-		Stderr: "/dev/null",
+		Stdin:  "",
+		Stdout: "",
+		Stderr: "",
 	}
 }
 
