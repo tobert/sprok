@@ -27,14 +27,15 @@ import (
 
 // Process is the configuration for running a process
 type Process struct {
-	Chdir  string            `json:"chdir"  yaml:"chdir"`  // cd /tmp
-	Env    map[string]string `json:"env"    yaml:"env"`    // env FOO=BAR
-	Argv   []string          `json:"argv"   yaml:"argv"`   // "/bin/dd" "if=/dev/zero" "count=10"
-	Stdin  string            `json:"stdin"  yaml:"stdin"`  // <"/dev/null"
-	Stdout string            `json:"stdout" yaml:"stdout"` // >"zero.bin"
-	Stderr string            `json:"stderr" yaml:"stderr"` // 2>"errors.log"
-	Uid    int               `json:"uid"    yaml:"uid"`    // 1337
-	Gid    int               `json:"gid"    yaml:"gid"`    // 1337
+	Chdir               string            `json:"chdir"  yaml:"chdir"`  // cd /tmp
+	Env                 map[string]string `json:"env"    yaml:"env"`    // env FOO=BAR
+	Argv                []string          `json:"argv"   yaml:"argv"`   // "/bin/dd" "if=/dev/zero" "count=10"
+	Stdin               string            `json:"stdin"  yaml:"stdin"`  // <"/dev/null"
+	Stdout              string            `json:"stdout" yaml:"stdout"` // >"zero.bin"
+	Stderr              string            `json:"stderr" yaml:"stderr"` // 2>"errors.log"
+	Uid                 int               `json:"uid"    yaml:"uid"`    // 1337
+	Gid                 int               `json:"gid"    yaml:"gid"`    // 1337
+	PreserveEnvironment bool              `json:"preserve_environment" yaml:"preserve_environment"`
 }
 
 // NewProcess returns a Process struct with the env map and argv allocated
@@ -172,6 +173,11 @@ func (p *Process) envPairs() []string {
 	for key, value := range p.Env {
 		env[i] = fmt.Sprintf("%s=%s", key, value)
 		i++
+	}
+
+	if p.PreserveEnvironment {
+		originalEnv := os.Environ()
+		return append(originalEnv, env...)
 	}
 	return env
 }
