@@ -16,7 +16,12 @@ package sprok
  * limitations under the License.
  */
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestNewProcess(t *testing.T) {
 	p := NewProcess()
@@ -42,5 +47,33 @@ func TestProcessString(t *testing.T) {
 
 	if p.String() != want {
 		t.Error("configured process did not return the expected string")
+	}
+}
+
+func TestProcessStringPreserveEnvironment(t *testing.T) {
+	want := "cd /tmp && env %s /bin/cat process.go <a 1>b 2>c"
+
+	if err := os.Setenv("FOO", "bar"); err != nil {
+		t.Fatal(err, "couldn not set env var")
+	}
+
+	p := NewProcess()
+	p.PreserveEnvironment = true
+	p.Chdir = "/tmp"
+	p.Argv = []string{"/bin/cat", "process.go"}
+	p.Env["TESTING"] = "true"
+	p.Env["ANOTHER"] = "yesplease"
+	p.Stdin = "a"
+	p.Stdout = "b"
+	p.Stderr = "c"
+
+	// TODO(fujin): this is brittle
+	evs := append(os.Environ(), []string{"TESTING=true", "ANOTHER=yesplease"}...)
+	evPairs := strings.Join(evs, " ")
+	want = fmt.Sprintf(want, evPairs)
+
+	if p.String() != want {
+		// TODO(fujin): not sure how I feel about \ns in Error either.
+		t.Error("configured process did not return the expected string, want:\n\n", want, "\n\ngot:", p.String(), "\n\n")
 	}
 }
