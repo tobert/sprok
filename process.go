@@ -139,19 +139,7 @@ func (p *Process) Exec() error {
 		}
 	}
 
-	if p.Gid >= 0 {
-		err = syscall.Setresgid(p.Gid, p.Gid, p.Gid)
-		if err != nil {
-			log.Fatalf("setresgid(%d...) failed: %s\n", p.Gid, err)
-		}
-	}
-
-	if p.Uid >= 0 {
-		err = syscall.Setresuid(p.Uid, p.Uid, p.Uid)
-		if err != nil {
-			log.Fatalf("setresuid(%d...) failed: %s\n", p.Uid, err)
-		}
-	}
+	p.drop_privileges()
 
 	return syscall.Exec(p.Argv[0], p.Argv, p.envPairs())
 }
